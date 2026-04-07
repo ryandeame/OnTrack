@@ -7,7 +7,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { FoodLogFormData, useFoodLogSubmit } from '@/hooks/use-food-log-submit';
 import { useFoodLogs } from '@/hooks/use-food-logs';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Keyboard, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 type FoodLogEntryFormProps = {
     /** Called after a successful submission */
@@ -137,6 +137,7 @@ export function FoodLogEntryForm({ onSubmitSuccess }: FoodLogEntryFormProps) {
         setName(selectedName);
         suppressSuggestionsRef.current = true;
         setShowSuggestions(false);
+        Keyboard.dismiss();
         setServingsPromptOpen(true);
         setServingsInput('1');
         setGramsPerServInput('');
@@ -161,10 +162,18 @@ export function FoodLogEntryForm({ onSubmitSuccess }: FoodLogEntryFormProps) {
                 setCaloriesPerServing(round3(calps));
                 setCarbsPerServing(round3(carbps));
                 setProteinPerServing(round3(protps));
-                // Note: cost is not prefilled as it may vary
+                if (latest.cost_usd_per_gram != null && latest.cost_usd_per_gram > 0) {
+                    setCostPerServing(`$${(latest.cost_usd_per_gram * gps).toFixed(2)}`);
+                } else {
+                    setCostPerServing('');
+                }
             }
         } finally {
             setServingsPromptOpen(false);
+            Keyboard.dismiss();
+            setTimeout(() => {
+                Keyboard.dismiss();
+            }, 0);
         }
     }, [servingsInput, gramsPerServInput, name, getLatestByName]);
 

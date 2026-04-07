@@ -18,7 +18,7 @@ import type { FoodLog } from '@/types/food';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, FlatList, Keyboard, LayoutAnimation, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, UIManager, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, Keyboard, LayoutAnimation, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, UIManager, View, useWindowDimensions } from 'react-native';
 
 /**
  * Represents a single day's worth of food log entries, grouped together
@@ -633,13 +633,15 @@ export function FoodLogDaysList({ refreshTrigger }: FoodLogDaysListProps) {
 
     return (
         <>
-            <FlatList
-                data={dayGroups}
-                keyExtractor={(dayGroup) => dayGroup.key}
-                renderItem={renderFoodLogDay}
-                contentContainerStyle={styles.listContent}
-                style={styles.list}
-            />
+            <View style={styles.list}>
+                <View style={styles.listContent}>
+                    {dayGroups.map((dayGroup) => (
+                        <View key={dayGroup.key}>
+                            {renderFoodLogDay({ item: dayGroup })}
+                        </View>
+                    ))}
+                </View>
+            </View>
 
             {/* Edit Modal with Sliding Calculator */}
             <Modal

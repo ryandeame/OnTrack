@@ -1,83 +1,102 @@
 import Collapsible from '@/components/collapsible';
 import CompactCalendar from '@/components/compact-calendar';
+import { GradientProgressRing } from '@/components/gradient-progress-ring';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Colors, type ThemeName } from '@/constants/theme';
+import { Colors, Fonts, type ThemeName } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
 import { useDailyCalories, useYesterdaySpend } from '@/hooks/use-daily-calories';
 import { formatTime, useTodayFoodLogs } from '@/hooks/use-today-food-logs';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-type DailySummaryColors = {
-    primary: string;
-    backgroundDark: string;
-    cardDark: string;
-    surfaceDark: string;
-    textPrimary: string;
-    textSecondary: string;
-    orange: string;
-    red: string;
-    yellow: string;
+type DailySummaryPalette = {
+    background: string;
+    backgroundAlt: string;
+    cardBackground: string;
     cardBorder: string;
+    text: string;
+    textSecondary: string;
+    textMuted: string;
+    primary: string;
+    secondary: string;
+    success: string;
+    warning: string;
+    danger: string;
+    ringCenter: string;
+    softPrimary: string;
+    softSecondary: string;
+    softNeutral: string;
 };
 
-function getDailySummaryColors(resolvedTheme: ThemeName): DailySummaryColors {
-    const themeColors = Colors[resolvedTheme];
+const CALORIE_GOAL = 2000;
+const SPEND_GOAL = 10;
+
+function withOpacity(hex: string, opacity: number) {
+    const normalized = hex.replace('#', '');
+    const safe = normalized.length === 3
+        ? normalized.split('').map((char) => `${char}${char}`).join('')
+        : normalized;
+
+    const red = Number.parseInt(safe.slice(0, 2), 16);
+    const green = Number.parseInt(safe.slice(2, 4), 16);
+    const blue = Number.parseInt(safe.slice(4, 6), 16);
+
+    return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+}
+
+function isInverseTheme(themeName: ThemeName) {
+    return themeName.endsWith('Inverse');
+}
+
+function getDailySummaryPalette(themeName: ThemeName): DailySummaryPalette {
+    const themeColors = Colors[themeName];
+    const inverse = isInverseTheme(themeName);
 
     return {
-        primary: themeColors.accent,
-        backgroundDark: themeColors.background,
-        cardDark: themeColors.card,
-        surfaceDark: themeColors.menuBackground,
-        textPrimary: themeColors.text,
+        background: themeColors.background,
+        backgroundAlt: themeColors.navBackground,
+        cardBackground: withOpacity(themeColors.accentSecondary, inverse ? 0.08 : 0.11),
+        cardBorder: withOpacity(themeColors.accent, inverse ? 0.16 : 0.18),
+        text: themeColors.text,
         textSecondary: themeColors.textSecondary,
-        orange: themeColors.warning,
-        red: themeColors.danger,
-        yellow: '#eab308',
-        cardBorder: themeColors.cardBorder,
+        textMuted: themeColors.textMuted,
+        primary: themeColors.accent,
+        secondary: themeColors.accentSecondary,
+        success: themeColors.success,
+        warning: themeColors.warning,
+        danger: themeColors.danger,
+        ringCenter: inverse ? themeColors.navBackground : '#120F22',
+        softPrimary: withOpacity(themeColors.accent, inverse ? 0.09 : 0.14),
+        softSecondary: withOpacity(themeColors.accentSecondary, inverse ? 0.09 : 0.14),
+        softNeutral: inverse ? 'rgba(99, 115, 129, 0.12)' : 'rgba(71, 85, 105, 0.22)',
     };
 }
 
-// Calorie goal (can be made configurable later)
-const CALORIE_GOAL = 2200;
-
-// Daily spend goal in USD
-const SPEND_GOAL = 10;
-
-// Format number with commas (e.g., 1850 -> "1,850")
 function formatNumber(num: number): string {
     return num.toLocaleString();
 }
 
-// Check if two dates are the same day
-function isSameDay(d1: Date, d2: Date): boolean {
-    return d1.getFullYear() === d2.getFullYear() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getDate() === d2.getDate();
+function isSameDay(first: Date, second: Date): boolean {
+    return first.getFullYear() === second.getFullYear()
+        && first.getMonth() === second.getMonth()
+        && first.getDate() === second.getDate();
 }
 
-// Format date for headline (e.g., "Dec 27, 2024" or "Today, Dec 27")
 function formatDateHeadline(date: Date): string {
-    const today = new Date();
-    const dateString = date.toLocaleDateString('en-US', {
-        month: 'short',
+    return date.toLocaleDateString('en-US', {
+        month: 'long',
         day: 'numeric',
         year: 'numeric',
     });
-
-    if (isSameDay(date, today)) {
-        return dateString;
-    }
-    return dateString;
 }
 
 export default function ROIScreen() {
     const { resolvedTheme } = useTheme();
-    const colors = useMemo(() => getDailySummaryColors(resolvedTheme), [resolvedTheme]);
-    const styles = useMemo(() => createStyles(colors), [colors]);
+    const palette = useMemo(() => getDailySummaryPalette(resolvedTheme), [resolvedTheme]);
+    const styles = useMemo(() => createStyles(palette), [palette]);
 
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [calendarVisible, setCalendarVisible] = useState(false);
@@ -94,555 +113,448 @@ export default function ROIScreen() {
         }, [refresh, refreshFoodLogs, refreshYesterdaySpend])
     );
 
-    const handleDateSelect = (date: Date) => {
+    const handleDateSelect = useCallback((date: Date) => {
         setCalendarVisible(false);
         setTimeout(() => {
             setSelectedDate(date);
-        }, 500);
-    };
-
-    const toggleCalendar = () => {
-        setCalendarVisible(!calendarVisible);
-    };
+        }, 350);
+    }, []);
 
     const progressPercent = Math.round((summary.totalCalories / CALORIE_GOAL) * 100);
-    const isOverGoal = progressPercent > 100;
-
     const spendPercentChange = yesterdaySpend > 0
         ? Math.round(((summary.totalSpend - yesterdaySpend) / yesterdaySpend) * 100)
         : 0;
-    const isSpendHigher = spendPercentChange > 0;
-
     const isToday = isSameDay(selectedDate, new Date());
     const logTitle = isToday ? "Today's Log" : `${formatDateHeadline(selectedDate)} Log`;
 
     return (
-        <ThemedView style={styles.container} useImageBackground>
+        <View style={styles.container}>
+            <LinearGradient
+                colors={[palette.background, palette.backgroundAlt]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+            />
+
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-                <View style={styles.dateHeadline}>
+                <View style={styles.header}>
                     <View>
                         <ThemedText style={styles.pageTitle}>Daily Summary</ThemedText>
                         <ThemedText style={styles.dateText}>{formatDateHeadline(selectedDate)}</ThemedText>
                     </View>
-                    <Pressable
-                        style={styles.calendarButton}
-                        onPress={toggleCalendar}
-                    >
+                    <Pressable style={styles.calendarButton} onPress={() => setCalendarVisible((current) => !current)}>
+                        <MaterialIcons
+                            name={calendarVisible ? 'keyboard-arrow-up' : 'calendar-month'}
+                            size={16}
+                            color={palette.primary}
+                        />
                         <ThemedText style={styles.calendarButtonText}>
                             {calendarVisible ? 'Hide Calendar' : 'View Calendar'}
                         </ThemedText>
-                        <MaterialIcons name={calendarVisible ? "keyboard-arrow-up" : "calendar-month"} size={16} color={colors.textSecondary} />
                     </Pressable>
                 </View>
 
-                <Collapsible expanded={calendarVisible} duration={500}>
-                    <View style={styles.calendarContainer}>
+                <Collapsible expanded={calendarVisible} duration={350}>
+                    <View style={styles.calendarWrap}>
                         <CompactCalendar selectedDate={selectedDate} onDateSelect={handleDateSelect} />
                     </View>
                 </Collapsible>
 
-                <View style={styles.cardsContainer}>
-                    <View style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <View style={[styles.iconContainer, { backgroundColor: 'rgba(19, 236, 109, 0.1)' }]}>
-                                <MaterialIcons name="attach-money" size={24} color={colors.primary} />
+                <View style={styles.summaryGrid}>
+                    <View style={styles.glassCard}>
+                        <LinearGradient colors={[palette.secondary, palette.primary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardStrip} />
+                        <ThemedText style={styles.eyebrow}>Daily Spend</ThemedText>
+                        {loading ? (
+                            <ActivityIndicator size="small" color={palette.primary} style={styles.metricLoader} />
+                        ) : (
+                            <>
+                                <ThemedText style={styles.primaryMetric}>${summary.totalSpend.toFixed(2)}</ThemedText>
+                                <ThemedText style={styles.goalLabel}>${SPEND_GOAL.toFixed(2)} goal</ThemedText>
+                            </>
+                        )}
+                        {yesterdaySpend > 0 && spendPercentChange !== 0 && (
+                            <View style={styles.changeBadge}>
+                                <MaterialIcons
+                                    name={spendPercentChange >= 0 ? 'trending-up' : 'trending-down'}
+                                    size={12}
+                                    color={palette.primary}
+                                />
+                                <ThemedText style={styles.changeBadgeText}>
+                                    {spendPercentChange >= 0 ? '+' : ''}
+                                    {spendPercentChange}% vs yesterday
+                                </ThemedText>
                             </View>
-                            {yesterdaySpend > 0 && spendPercentChange !== 0 && (
-                                <View style={isSpendHigher ? styles.changeBadgeRed : styles.changeBadgeGreen}>
-                                    <ThemedText style={isSpendHigher ? styles.changeBadgeTextRed : styles.changeBadgeTextGreen}>
-                                        {isSpendHigher ? '+' : ''}{spendPercentChange}% vs previous day
-                                    </ThemedText>
-                                </View>
-                            )}
-                        </View>
-                        <View style={styles.cardContent}>
-                            <ThemedText style={styles.cardLabel}>Daily Spend</ThemedText>
-                            <View style={styles.valueRow}>
-                                {loading ? (
-                                    <ActivityIndicator size="small" color={colors.primary} />
-                                ) : (
-                                    <>
-                                        <ThemedText style={styles.cardValue}>${summary.totalSpend.toFixed(2)}</ThemedText>
-                                        <ThemedText style={styles.cardSubvalue}> / ${SPEND_GOAL.toFixed(2)} goal</ThemedText>
-                                    </>
-                                )}
-                            </View>
-                            {!loading && (
-                                <View style={styles.dollarIndicator}>
-                                    {(() => {
-                                        const spendRatio = summary.totalSpend / SPEND_GOAL;
-                                        if (spendRatio <= 0.5) {
-                                            return <ThemedText style={[styles.dollarSign, { color: colors.primary }]}>$</ThemedText>;
-                                        } else if (spendRatio <= 1.0) {
-                                            return <ThemedText style={[styles.dollarSign, { color: colors.yellow }]}>$$</ThemedText>;
-                                        } else if (spendRatio <= 1.1) {
-                                            return <ThemedText style={[styles.dollarSign, { color: '#f87171' }]}>$$$</ThemedText>;
-                                        } else {
-                                            return <ThemedText style={[styles.dollarSign, { color: colors.red }]}>$$$$</ThemedText>;
-                                        }
-                                    })()}
-                                </View>
-                            )}
-                        </View>
+                        )}
                     </View>
 
-                    <View style={[styles.card, styles.caloriesCard]}>
-                        <View style={styles.caloriesContent}>
-                            <View style={[styles.iconContainer, { backgroundColor: 'rgba(249, 115, 22, 0.1)' }]}>
-                                <MaterialIcons name="local-fire-department" size={24} color={colors.orange} />
-                            </View>
-                            <ThemedText style={styles.cardLabel}>Calories</ThemedText>
-                            {loading ? (
-                                <ActivityIndicator size="small" color={colors.orange} style={{ marginVertical: 8 }} />
-                            ) : (
-                                <>
-                                    <View style={styles.valueRow}>
-                                        <ThemedText style={styles.cardValue}>{formatNumber(summary.totalCalories)}</ThemedText>
-                                        <ThemedText style={[styles.cardSubvalue, { color: colors.orange }]}>kcal</ThemedText>
-                                    </View>
-                                    <ThemedText style={styles.goalText}>Goal: {formatNumber(CALORIE_GOAL)} kcal</ThemedText>
-                                </>
-                            )}
-                        </View>
-                        <View style={styles.donutContainer}>
-                            <View style={[styles.donutOuter, isOverGoal && { borderColor: colors.red }]}>
-                                <View style={styles.donutInner}>
-                                    <ThemedText style={[styles.donutText, isOverGoal && { color: colors.red }]}>
-                                        {loading ? '...' : `${progressPercent}%`}
-                                    </ThemedText>
+                    <View style={[styles.glassCard, styles.centerCard]}>
+                        <LinearGradient colors={[palette.primary, palette.secondary]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cardStrip} />
+                        <View style={styles.ringWrap}>
+                            <GradientProgressRing
+                                size={110}
+                                strokeWidth={7}
+                                progressPercent={progressPercent}
+                                trackColor={palette.softNeutral}
+                                startColor={palette.primary}
+                                endColor={palette.secondary}>
+                                <View style={styles.ringInner}>
+                                    {loading ? (
+                                        <ActivityIndicator size="small" color={palette.primary} />
+                                    ) : (
+                                        <>
+                                            <ThemedText style={styles.ringValue}>{formatNumber(summary.totalCalories)}</ThemedText>
+                                            <ThemedText style={styles.ringLabel}>kcal</ThemedText>
+                                        </>
+                                    )}
                                 </View>
-                            </View>
+                            </GradientProgressRing>
                         </View>
+                        <ThemedText style={styles.goalLabel}>Goal: {formatNumber(CALORIE_GOAL)} kcal</ThemedText>
+                        <ThemedText style={styles.progressCaption}>{loading ? '...' : `${progressPercent}% of target`}</ThemedText>
                     </View>
                 </View>
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.macrosScroll}>
-                    <View style={styles.macroChip}>
-                        <View style={[styles.macroDot, { backgroundColor: colors.primary }]} />
-                        <View>
-                            <ThemedText style={styles.macroLabel}>PROTEIN</ThemedText>
-                            <ThemedText style={styles.macroValue}>{loading ? '...' : `${summary.totalProtein}g`}</ThemedText>
-                        </View>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.macroRow}>
+                    <View style={[styles.macroChip, { backgroundColor: palette.softPrimary, borderColor: withOpacity(palette.primary, 0.28) }]}>
+                        <View style={[styles.macroDot, { backgroundColor: palette.primary }]} />
+                        <ThemedText style={styles.macroText}>{loading ? 'PROTEIN ...' : `PROTEIN ${summary.totalProtein}g`}</ThemedText>
                     </View>
-                    <View style={styles.macroChip}>
-                        <View style={[styles.macroDot, { backgroundColor: colors.yellow }]} />
-                        <View>
-                            <ThemedText style={styles.macroLabel}>CARBS</ThemedText>
-                            <ThemedText style={styles.macroValue}>{loading ? '...' : `${summary.totalCarbs}g`}</ThemedText>
-                        </View>
+                    <View style={[styles.macroChip, { backgroundColor: palette.softSecondary, borderColor: withOpacity(palette.secondary, 0.28) }]}>
+                        <View style={[styles.macroDot, { backgroundColor: palette.secondary }]} />
+                        <ThemedText style={styles.macroText}>{loading ? 'CARBS ...' : `CARBS ${summary.totalCarbs}g`}</ThemedText>
                     </View>
                 </ScrollView>
 
-                <View style={styles.activitySection}>
-                    <View style={styles.sectionHeader}>
-                        <ThemedText style={styles.sectionTitle}>{logTitle}</ThemedText>
-                        <ThemedText style={styles.seeAllButton}>{foodItems.length} items</ThemedText>
+                <View style={styles.logSection}>
+                    <View style={styles.logHeader}>
+                        <ThemedText style={styles.logTitle}>{logTitle}</ThemedText>
+                        <ThemedText style={styles.logCount}>{foodItems.length} items</ThemedText>
                     </View>
 
                     {foodLoading ? (
-                        <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="small" color={colors.primary} />
+                        <View style={styles.emptyState}>
+                            <ActivityIndicator size="small" color={palette.primary} />
                         </View>
                     ) : foodItems.length === 0 ? (
-                        <View style={styles.emptyContainer}>
-                            <MaterialIcons name="lunch-dining" size={48} color={colors.textSecondary} />
-                            <ThemedText style={styles.emptyText}>No food logged {isToday ? 'today' : 'on this day'}</ThemedText>
+                        <View style={styles.emptyState}>
+                            <MaterialIcons name="lunch-dining" size={40} color={palette.textSecondary} />
+                            <ThemedText style={styles.emptyText}>No food logged {isToday ? 'today' : 'for this day'}.</ThemedText>
                         </View>
                     ) : (
-                        foodItems.map((item) => (
-                            <View key={item.id} style={styles.logItem}>
-                                <View style={styles.logItemIconContainer}>
-                                    <MaterialIcons name="lunch-dining" size={24} color={colors.textSecondary} />
-                                </View>
-                                <View style={styles.logItemInfo}>
-                                    <ThemedText style={styles.logItemTitle} numberOfLines={2}>{item.name}</ThemedText>
-                                    <ThemedText style={styles.logItemSubtitle}>{item.grams}g • {formatTime(item.eatenAt)}</ThemedText>
-                                </View>
-                                <View style={styles.logItemValues}>
-                                    <ThemedText style={styles.logItemPrice}>
-                                        {item.cost !== null ? `$${item.cost.toFixed(2)}` : '-'}
-                                    </ThemedText>
-                                    <View style={styles.badgeRow}>
-                                        {item.hasProtein ? (
-                                            <View style={styles.proteinBadge}>
-                                                <ThemedText style={styles.proteinBadgeText}>
-                                                    {item.costPer10gProtein !== null
-                                                        ? `$${item.costPer10gProtein.toFixed(2)}/10g`
-                                                        : '-/10g'}
-                                                </ThemedText>
-                                                <ThemedText style={styles.proteinBadgeText}>protein</ThemedText>
-                                            </View>
-                                        ) : (
-                                            <View style={styles.noProteinBadge}>
-                                                <ThemedText style={styles.noProteinBadgeText}>no protein</ThemedText>
-                                            </View>
-                                        )}
-                                        <View style={styles.caloriesBadge}>
-                                            <ThemedText style={styles.caloriesBadgeText}>{item.calories} kcal</ThemedText>
-                                        </View>
+                        foodItems.map((item) => {
+                            return (
+                                <View key={item.id} style={styles.logCard}>
+                                    <View style={[styles.logIconWrap, { backgroundColor: palette.softPrimary }]}>
+                                        <MaterialIcons name="restaurant" size={22} color={palette.primary} />
+                                    </View>
+                                    <View style={styles.logCopy}>
+                                        <ThemedText style={styles.logItemTitle} numberOfLines={2}>{item.name}</ThemedText>
+                                        <ThemedText style={styles.logItemMeta}>{`${item.grams}g • ${formatTime(item.eatenAt)}`}</ThemedText>
+                                    </View>
+                                    <View style={styles.logValues}>
+                                        <ThemedText style={styles.logMetric}>{item.calories}</ThemedText>
+                                        <ThemedText style={styles.logMetricLabel}>kcal</ThemedText>
+                                        <ThemedText style={styles.logPrice}>
+                                            {item.cost !== null ? `$${item.cost.toFixed(2)}` : '-'}
+                                        </ThemedText>
                                     </View>
                                 </View>
-                            </View>
-                        ))
+                            );
+                        })
                     )}
                 </View>
             </ScrollView>
-        </ThemedView>
+        </View>
     );
 }
 
-const createStyles = (colors: DailySummaryColors) => StyleSheet.create({
+const createStyles = (palette: DailySummaryPalette) => StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.backgroundDark,
+        backgroundColor: palette.background,
     },
     scrollView: {
         flex: 1,
     },
     scrollContent: {
-        paddingTop: 24,
-        paddingBottom: 32,
+        paddingTop: 32,
+        paddingBottom: 36,
     },
-    dateHeadline: {
+    header: {
+        paddingHorizontal: 24,
+        paddingTop: 14,
+        paddingBottom: 18,
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-end',
-        paddingHorizontal: 16,
-        paddingTop: 12,
-        paddingBottom: 16,
+        gap: 12,
     },
     pageTitle: {
-        fontSize: 28,
+        fontSize: 30,
         fontWeight: '800',
-        color: colors.textPrimary,
-        letterSpacing: -0.5,
+        color: palette.text,
+        letterSpacing: -0.8,
+        fontFamily: Fonts.rounded,
     },
     dateText: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: colors.primary,
         marginTop: 4,
+        color: palette.primary,
+        fontSize: 16,
+        fontWeight: '600',
+        fontFamily: Fonts.rounded,
     },
     calendarButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
-        backgroundColor: colors.surfaceDark,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
+        gap: 6,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 999,
+        backgroundColor: withOpacity(palette.primary, 0.1),
+        borderWidth: 1,
+        borderColor: withOpacity(palette.primary, 0.18),
     },
     calendarButtonText: {
+        color: palette.primary,
         fontSize: 12,
-        fontWeight: 'bold',
-        color: colors.textSecondary,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        fontFamily: Fonts.rounded,
     },
-    calendarContainer: {
-        paddingHorizontal: 16,
-        paddingBottom: 16,
+    calendarWrap: {
+        paddingHorizontal: 24,
+        paddingBottom: 20,
     },
-    cardsContainer: {
-        paddingHorizontal: 16,
-        gap: 16,
+    summaryGrid: {
+        paddingHorizontal: 24,
+        flexDirection: 'row',
+        gap: 14,
     },
-    card: {
-        backgroundColor: colors.cardDark,
-        borderRadius: 16,
-        padding: 20,
+    glassCard: {
+        flex: 1,
+        minHeight: 210,
+        padding: 18,
+        borderRadius: 24,
+        backgroundColor: palette.cardBackground,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 16,
-    },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    changeBadgeRed: {
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-        maxWidth: 140,
-    },
-    changeBadgeTextRed: {
-        fontSize: 11,
-        fontWeight: 'bold',
-        color: '#f87171',
-    },
-    changeBadgeGreen: {
-        backgroundColor: 'rgba(19, 236, 109, 0.1)',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-        maxWidth: 140,
-    },
-    changeBadgeTextGreen: {
-        fontSize: 11,
-        fontWeight: 'bold',
-        color: colors.primary,
-    },
-    dollarIndicator: {
-        marginTop: 8,
-    },
-    dollarSign: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        letterSpacing: 2,
-    },
-    cardContent: {
-        marginBottom: 24,
-    },
-    cardLabel: {
-        fontSize: 14,
-        color: colors.textSecondary,
-        fontWeight: '500',
-        marginBottom: 4,
-    },
-    valueRow: {
-        flexDirection: 'row',
-        alignItems: 'baseline',
-        gap: 4,
-    },
-    cardValue: {
-        fontSize: 32,
-        fontWeight: '800',
-        color: colors.textPrimary,
-        letterSpacing: -1,
-    },
-    cardSubvalue: {
-        fontSize: 14,
-        color: colors.textSecondary,
-        fontWeight: '500',
-    },
-    progressContainer: {
-        gap: 8,
-    },
-    progressLabels: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    progressLabelLeft: {
-        fontSize: 12,
-        fontWeight: '500',
-        color: colors.textSecondary,
-    },
-    progressLabelRight: {
-        fontSize: 12,
-        fontWeight: '500',
-        color: colors.primary,
-    },
-    progressBar: {
-        height: 10,
-        backgroundColor: colors.surfaceDark,
-        borderRadius: 5,
+        borderColor: palette.cardBorder,
         overflow: 'hidden',
     },
-    progressFill: {
-        height: '100%',
-        backgroundColor: colors.primary,
-        borderRadius: 5,
+    centerCard: {
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    caloriesCard: {
+    cardStrip: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        opacity: 0.9,
+    },
+    eyebrow: {
+        color: palette.textSecondary,
+        fontSize: 11,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 1.4,
+        fontFamily: Fonts.rounded,
+    },
+    metricLoader: {
+        marginTop: 20,
+    },
+    primaryMetric: {
+        marginTop: 14,
+        color: palette.text,
+        fontSize: 34,
+        fontWeight: '800',
+        letterSpacing: -1,
+        fontFamily: Fonts.rounded,
+    },
+    goalLabel: {
+        marginTop: 6,
+        color: palette.textSecondary,
+        fontSize: 12,
+        fontWeight: '600',
+        fontFamily: Fonts.rounded,
+    },
+    changeBadge: {
+        marginTop: 'auto',
+        alignSelf: 'flex-start',
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
-    },
-    caloriesContent: {
-        flex: 1,
         gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: withOpacity(palette.primary, 0.14),
     },
-    goalText: {
-        fontSize: 12,
-        color: colors.textSecondary,
-        marginTop: 4,
+    changeBadgeText: {
+        color: palette.primary,
+        fontSize: 10,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 0.4,
+        fontFamily: Fonts.rounded,
     },
-    donutContainer: {
-        width: 100,
-        height: 100,
+    ringWrap: {
+        marginTop: 10,
+        marginBottom: 12,
+    },
+    ringInner: {
+        width: 96,
+        height: 96,
+        borderRadius: 999,
+        backgroundColor: palette.ringCenter,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    donutOuter: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: colors.surfaceDark,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 10,
-        borderColor: colors.primary,
+    ringValue: {
+        color: palette.text,
+        fontSize: 22,
+        fontWeight: '800',
+        letterSpacing: -0.6,
+        fontFamily: Fonts.rounded,
     },
-    donutInner: {
-        alignItems: 'center',
-        justifyContent: 'center',
+    ringLabel: {
+        marginTop: 2,
+        color: palette.textSecondary,
+        fontSize: 10,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        fontFamily: Fonts.rounded,
     },
-    donutText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: colors.textSecondary,
+    progressCaption: {
+        marginTop: 2,
+        color: palette.textMuted,
+        fontSize: 11,
+        fontWeight: '700',
+        fontFamily: Fonts.rounded,
     },
-    macrosScroll: {
-        marginTop: 16,
-        paddingHorizontal: 16,
+    macroRow: {
+        paddingHorizontal: 24,
+        paddingTop: 20,
+        paddingBottom: 6,
+        gap: 10,
     },
     macroChip: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-        backgroundColor: colors.cardDark,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 8,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 999,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
-        marginRight: 12,
     },
     macroDot: {
         width: 8,
         height: 8,
         borderRadius: 4,
     },
-    macroLabel: {
-        fontSize: 10,
-        fontWeight: 'bold',
-        color: colors.textSecondary,
-        textTransform: 'uppercase',
+    macroText: {
+        color: palette.text,
+        fontSize: 12,
+        fontWeight: '800',
+        letterSpacing: 0.4,
+        fontFamily: Fonts.rounded,
     },
-    macroValue: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: colors.textPrimary,
-    },
-    activitySection: {
-        marginTop: 24,
-        paddingHorizontal: 16,
+    logSection: {
+        paddingHorizontal: 24,
+        paddingTop: 14,
         gap: 12,
     },
-    sectionHeader: {
+    logHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: 2,
     },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: colors.textPrimary,
+    logTitle: {
+        color: palette.text,
+        fontSize: 20,
+        fontWeight: '800',
+        letterSpacing: -0.4,
+        fontFamily: Fonts.rounded,
     },
-    seeAllButton: {
-        fontSize: 14,
-        fontWeight: 'bold',
-        color: colors.primary,
+    logCount: {
+        color: palette.primary,
+        fontSize: 13,
+        fontWeight: '700',
+        fontFamily: Fonts.rounded,
     },
-    logItem: {
+    logCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
-        backgroundColor: colors.cardDark,
+        gap: 14,
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 20,
+        backgroundColor: palette.cardBackground,
         borderWidth: 1,
-        borderColor: colors.cardBorder,
+        borderColor: palette.cardBorder,
     },
-    logItemImage: {
+    logIconWrap: {
         width: 48,
         height: 48,
-        borderRadius: 8,
-        backgroundColor: colors.surfaceDark,
-    },
-    logItemIconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 8,
-        backgroundColor: colors.surfaceDark,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    logItemInfo: {
+    logCopy: {
         flex: 1,
     },
     logItemTitle: {
+        color: palette.text,
         fontSize: 16,
-        fontWeight: 'bold',
-        color: colors.textPrimary,
+        fontWeight: '700',
+        fontFamily: Fonts.rounded,
     },
-    logItemSubtitle: {
+    logItemMeta: {
+        marginTop: 3,
+        color: palette.textSecondary,
         fontSize: 12,
-        color: colors.textSecondary,
         fontWeight: '500',
-        marginTop: 2,
+        fontFamily: Fonts.rounded,
     },
-    logItemValues: {
+    logValues: {
         alignItems: 'flex-end',
-        gap: 4,
     },
-    logItemPrice: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: colors.textPrimary,
+    logMetric: {
+        color: palette.text,
+        fontSize: 18,
+        fontWeight: '800',
+        fontFamily: Fonts.rounded,
     },
-    badgeRow: {
-        flexDirection: 'row',
-        gap: 4,
-        alignItems: 'flex-start',
+    logMetricLabel: {
+        color: palette.textMuted,
+        fontSize: 10,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+        fontFamily: Fonts.rounded,
     },
-    proteinBadge: {
-        backgroundColor: 'rgba(19, 236, 109, 0.1)',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-        alignItems: 'center',
-    },
-    proteinBadgeText: {
-        fontSize: 11,
-        fontWeight: '500',
-        color: colors.primary,
-        lineHeight: 13,
-    },
-    noProteinBadge: {
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    noProteinBadgeText: {
-        fontSize: 11,
-        fontWeight: '500',
-        color: colors.red,
-    },
-    caloriesBadge: {
-        backgroundColor: 'rgba(249, 115, 22, 0.1)',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    caloriesBadgeText: {
+    logPrice: {
+        marginTop: 6,
+        color: palette.textSecondary,
         fontSize: 12,
-        fontWeight: '500',
-        color: colors.orange,
+        fontWeight: '700',
+        fontFamily: Fonts.rounded,
     },
-    loadingContainer: {
-        padding: 24,
+    emptyState: {
+        minHeight: 140,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    emptyContainer: {
-        padding: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
+        gap: 10,
+        backgroundColor: palette.cardBackground,
+        borderWidth: 1,
+        borderColor: palette.cardBorder,
     },
     emptyText: {
+        color: palette.textSecondary,
         fontSize: 14,
-        color: colors.textSecondary,
-        fontWeight: '500',
+        fontWeight: '600',
+        fontFamily: Fonts.rounded,
     },
 });

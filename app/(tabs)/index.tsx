@@ -17,9 +17,6 @@ export default function FoodScreen() {
       <ThemedView style={styles.container} useImageBackground>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <ThemedText type="title" style={styles.title}>Log Food</ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Track servings, protein, and cost together so the daily summary stays accurate.
-          </ThemedText>
 
           <FoodLogEntryForm onSubmitSuccess={handleFormSubmitSuccess} />
 
@@ -48,11 +45,6 @@ const styles = StyleSheet.create({
   title: {
     marginTop: 16,
     lineHeight: 42,
-  },
-  subtitle: {
-    opacity: 0.82,
-    marginTop: -2,
-    marginBottom: 4,
   },
   historyHeader: {
     marginTop: 20,

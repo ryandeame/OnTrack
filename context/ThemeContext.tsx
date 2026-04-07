@@ -2,48 +2,61 @@ import React, { createContext, useContext, useMemo, useState } from 'react';
 import { useColorScheme as useNativeColorScheme } from 'react-native';
 
 import {
+  DEFAULT_BASE_THEME,
   DEFAULT_THEME,
-  SYSTEM_DARK_THEME,
-  SYSTEM_LIGHT_THEME,
+  resolveThemeName,
+  type BaseThemeName,
+  type ThemeAppearance,
+  type ThemeAppearanceMode,
   type ThemeName,
 } from '@/constants/theme';
 
-export type ThemeType = 'system' | ThemeName;
-
 interface ThemeContextType {
-  theme: ThemeType;
-  setTheme: (theme: ThemeType) => void;
+  theme: BaseThemeName;
+  setTheme: (theme: BaseThemeName) => void;
+  appearanceMode: ThemeAppearanceMode;
+  setAppearanceMode: (appearanceMode: ThemeAppearanceMode) => void;
+  resolvedAppearance: ThemeAppearance;
   resolvedTheme: ThemeName;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'system',
+  theme: DEFAULT_BASE_THEME,
   setTheme: () => {},
+  appearanceMode: 'system',
+  setAppearanceMode: () => {},
+  resolvedAppearance: 'dark',
   resolvedTheme: DEFAULT_THEME,
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemColorScheme = useNativeColorScheme();
-  const [theme, setTheme] = useState<ThemeType>(DEFAULT_THEME);
+  const [theme, setTheme] = useState<BaseThemeName>(DEFAULT_BASE_THEME);
+  const [appearanceMode, setAppearanceMode] = useState<ThemeAppearanceMode>('system');
 
-  const resolvedTheme = useMemo<ThemeName>(() => {
-    if (theme !== 'system') {
-      return theme;
+  const resolvedAppearance = useMemo<ThemeAppearance>(() => {
+    if (appearanceMode !== 'system') {
+      return appearanceMode;
     }
 
-    if (systemColorScheme === 'light') {
-      return SYSTEM_LIGHT_THEME;
-    }
+    return systemColorScheme === 'light' ? 'light' : 'dark';
+  }, [appearanceMode, systemColorScheme]);
 
-    if (systemColorScheme === 'dark') {
-      return SYSTEM_DARK_THEME;
-    }
-
-    return DEFAULT_THEME;
-  }, [systemColorScheme, theme]);
+  const resolvedTheme = useMemo<ThemeName>(
+    () => resolveThemeName(theme, resolvedAppearance),
+    [resolvedAppearance, theme]
+  );
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
+    <ThemeContext.Provider
+      value={{
+        theme,
+        setTheme,
+        appearanceMode,
+        setAppearanceMode,
+        resolvedAppearance,
+        resolvedTheme,
+      }}>
       {children}
     </ThemeContext.Provider>
   );

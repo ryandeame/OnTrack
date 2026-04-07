@@ -1,14 +1,20 @@
 import { Platform } from 'react-native';
 
-export type ThemeName =
+export type BaseThemeName =
   | 'aurora'
   | 'cobalt'
   | 'amethyst'
-  | 'inferno'
+  | 'inferno';
+
+export type InverseThemeName =
   | 'auroraInverse'
   | 'cobaltInverse'
   | 'amethystInverse'
   | 'infernoInverse';
+
+export type ThemeName = BaseThemeName | InverseThemeName;
+export type ThemeAppearance = 'light' | 'dark';
+export type ThemeAppearanceMode = 'system' | ThemeAppearance;
 
 export type ThemeColors = {
   text: string;
@@ -70,10 +76,9 @@ type ThemeSeed = {
 };
 
 export type ThemeListItem = {
-  name: ThemeName;
+  name: BaseThemeName;
   label: string;
   swatch: string;
-  inverseOf?: ThemeName;
 };
 
 const buildTheme = (seed: ThemeSeed): ThemeColors => {
@@ -124,20 +129,20 @@ const buildTheme = (seed: ThemeSeed): ThemeColors => {
 
 export const Colors: Record<ThemeName, ThemeColors> = {
   aurora: buildTheme({
-    background: '#0A0F0D',
-    navBackground: '#111A15',
-    menuBackground: '#17231C',
-    border: 'rgba(19, 236, 109, 0.14)',
-    text: '#F5FFF8',
-    textSecondary: '#B7CDC0',
-    textMuted: '#8FA89A',
-    accent: '#13EC6D',
-    accentSecondary: '#5FF6A3',
-    accentMuted: 'rgba(19, 236, 109, 0.16)',
+    background: '#0D0A1A',
+    navBackground: '#141123',
+    menuBackground: '#19152B',
+    border: 'rgba(0, 229, 255, 0.14)',
+    text: '#F4F3FF',
+    textSecondary: '#A9A8C8',
+    textMuted: '#7D7AA2',
+    accent: '#00E5FF',
+    accentSecondary: '#9C27B0',
+    accentMuted: 'rgba(0, 229, 255, 0.14)',
     warning: '#FBBF24',
     danger: '#FB7185',
-    buttonText: '#07110B',
-    modalBackdrop: 'rgba(0, 0, 0, 0.52)',
+    buttonText: '#0D0A1A',
+    modalBackdrop: 'rgba(8, 5, 19, 0.58)',
   }),
   cobalt: buildTheme({
     background: '#08111B',
@@ -148,7 +153,7 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     textSecondary: '#C6D7EE',
     textMuted: '#93A9C7',
     accent: '#3B82F6',
-    accentSecondary: '#60A5FA',
+    accentSecondary: '#D1D5DB',
     accentMuted: 'rgba(59, 130, 246, 0.18)',
     warning: '#F59E0B',
     danger: '#F87171',
@@ -164,7 +169,7 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     textSecondary: '#D8C7EA',
     textMuted: '#B69DCC',
     accent: '#A855F7',
-    accentSecondary: '#C084FC',
+    accentSecondary: '#F8FAFF',
     accentMuted: 'rgba(168, 85, 247, 0.18)',
     warning: '#FBBF24',
     danger: '#FB7185',
@@ -180,7 +185,7 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     textSecondary: '#EBC9AF',
     textMuted: '#C89B7B',
     accent: '#F97316',
-    accentSecondary: '#FB923C',
+    accentSecondary: '#FF453A',
     accentMuted: 'rgba(249, 115, 22, 0.18)',
     warning: '#FACC15',
     danger: '#EF4444',
@@ -188,20 +193,20 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     modalBackdrop: 'rgba(17, 9, 4, 0.58)',
   }),
   auroraInverse: buildTheme({
-    background: '#F5FFF8',
+    background: '#F5F8F8',
     navBackground: '#FFFFFF',
-    menuBackground: '#E7F7ED',
-    border: 'rgba(19, 236, 109, 0.18)',
-    text: '#102218',
-    textSecondary: '#416252',
-    textMuted: '#5A7B6A',
-    accent: '#13C962',
-    accentSecondary: '#0F9F4D',
-    accentMuted: 'rgba(19, 201, 98, 0.12)',
+    menuBackground: '#EEF4FA',
+    border: 'rgba(19, 127, 236, 0.18)',
+    text: '#161B33',
+    textSecondary: '#4F5F7A',
+    textMuted: '#71829D',
+    accent: '#137FEC',
+    accentSecondary: '#7A3DF0',
+    accentMuted: 'rgba(19, 127, 236, 0.12)',
     warning: '#D97706',
     danger: '#DC2626',
-    buttonText: '#F5FFF8',
-    modalBackdrop: 'rgba(10, 15, 13, 0.18)',
+    buttonText: '#F5F8F8',
+    modalBackdrop: 'rgba(13, 10, 26, 0.18)',
   }),
   cobaltInverse: buildTheme({
     background: '#F6FAFF',
@@ -212,7 +217,7 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     textSecondary: '#38506F',
     textMuted: '#5E7696',
     accent: '#2563EB',
-    accentSecondary: '#1D4ED8',
+    accentSecondary: '#BFC7D5',
     accentMuted: 'rgba(37, 99, 235, 0.12)',
     warning: '#D97706',
     danger: '#DC2626',
@@ -228,7 +233,7 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     textSecondary: '#5A3F73',
     textMuted: '#7A5B98',
     accent: '#9333EA',
-    accentSecondary: '#7E22CE',
+    accentSecondary: '#FFFFFF',
     accentMuted: 'rgba(147, 51, 234, 0.12)',
     warning: '#D97706',
     danger: '#DC2626',
@@ -244,7 +249,7 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     textSecondary: '#7E563F',
     textMuted: '#9B7259',
     accent: '#EA580C',
-    accentSecondary: '#C2410C',
+    accentSecondary: '#FF3B30',
     accentMuted: 'rgba(234, 88, 12, 0.12)',
     warning: '#CA8A04',
     danger: '#DC2626',
@@ -258,15 +263,27 @@ export const ThemeList: ThemeListItem[] = [
   { name: 'cobalt', label: 'Cobalt', swatch: Colors.cobalt.accent },
   { name: 'amethyst', label: 'Amethyst', swatch: Colors.amethyst.accent },
   { name: 'inferno', label: 'Inferno', swatch: Colors.inferno.accent },
-  { name: 'auroraInverse', label: 'Aurora Inverse', swatch: Colors.auroraInverse.accent, inverseOf: 'aurora' },
-  { name: 'cobaltInverse', label: 'Cobalt Inverse', swatch: Colors.cobaltInverse.accent, inverseOf: 'cobalt' },
-  { name: 'amethystInverse', label: 'Amethyst Inverse', swatch: Colors.amethystInverse.accent, inverseOf: 'amethyst' },
-  { name: 'infernoInverse', label: 'Inferno Inverse', swatch: Colors.infernoInverse.accent, inverseOf: 'inferno' },
 ];
 
+export const InverseThemeMap: Record<BaseThemeName, InverseThemeName> = {
+  aurora: 'auroraInverse',
+  cobalt: 'cobaltInverse',
+  amethyst: 'amethystInverse',
+  inferno: 'infernoInverse',
+};
+
+export const DEFAULT_BASE_THEME: BaseThemeName = 'aurora';
 export const SYSTEM_DARK_THEME: ThemeName = 'aurora';
 export const SYSTEM_LIGHT_THEME: ThemeName = 'auroraInverse';
 export const DEFAULT_THEME: ThemeName = 'aurora';
+
+export function isInverseTheme(themeName: ThemeName) {
+  return themeName.endsWith('Inverse');
+}
+
+export function resolveThemeName(baseTheme: BaseThemeName, appearance: ThemeAppearance): ThemeName {
+  return appearance === 'light' ? InverseThemeMap[baseTheme] : baseTheme;
+}
 
 export const Fonts = Platform.select({
   ios: {
