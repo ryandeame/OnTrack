@@ -68,7 +68,9 @@ export default function SignUpScreen() {
                         </View>
                         <Text style={styles.successTitle}>Check your email</Text>
                         <Text style={styles.successText}>
-                            We've sent a confirmation link to {email}. Please verify your email to continue.
+                            {"We've sent a confirmation link to "}
+                            {email}
+                            {'. Please verify your email to continue.'}
                         </Text>
                         <Link href="/(auth)/sign-in" asChild>
                             <Pressable style={styles.button}>

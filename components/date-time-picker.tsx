@@ -51,7 +51,6 @@ export default function DateTimePicker({ visible, value, onChange, onClose }: Pr
   const [temp, setTemp] = useState<Date>(value);
   const y = temp.getFullYear();
   const m = temp.getMonth();
-  const d = temp.getDate();
   const hh = temp.getHours();
   const mm = temp.getMinutes();
   const ss = temp.getSeconds();
@@ -90,7 +89,6 @@ export default function DateTimePicker({ visible, value, onChange, onClose }: Pr
     setHourStr(String(hh).padStart(2, '0'));
     setMinuteStr(String(mm).padStart(2, '0'));
     setSecondStr(String(ss).padStart(2, '0'));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hh, mm, ss]);
 
   // Reset picker state when opened or when value changes while open

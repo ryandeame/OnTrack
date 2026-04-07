@@ -29,7 +29,7 @@ export default function Collapsible({ children, expanded, duration = 300 }: Prop
             duration,
             easing: Easing.inOut(Easing.ease),
         });
-    }, [expanded, contentHeight, duration]);
+    }, [contentHeight, duration, expanded, height]);
 
     const animatedStyle = useAnimatedStyle(() => {
         return {

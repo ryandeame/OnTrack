@@ -1,50 +1,102 @@
-# Welcome to your Expo app 👋
+# OnTrack
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+OnTrack is a React Native fitness and nutrition app built with Expo and Supabase. It helps users log meals, track calories and macros, record workouts, monitor daily food spend, and review short-term trends from a single mobile-first interface.
 
-## Get started
+## Features
 
-1. Install dependencies
+- Email sign-in and sign-up powered by Supabase Auth
+- Daily summary screen with calories, protein, carbs, food spend, and date-based history
+- Food logging flow with servings, grams, calories, carbs, protein, and optional cost tracking
+- Food log history grouped by day
+- Dashboard view for the last 10 days of calories and protein
+- Exercise logging with name suggestions and quick prefill from previous entries
+- Theme switching with multiple recovered visual palettes
+
+## Tech Stack
+
+- Expo
+- React Native
+- Expo Router
+- TypeScript
+- Supabase
+
+## Getting Started
+
+1. Install dependencies:
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. Create a local environment file:
 
    ```bash
-   npx expo start
+   cp .env.example .env.local
    ```
 
-In the output, you'll find options to open the app in a
+   On Windows PowerShell:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   ```powershell
+   Copy-Item .env.example .env.local
+   ```
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+3. Add your Supabase project values to `.env.local`.
 
-## Get a fresh project
+4. Start the app:
 
-When you're ready, run:
+   ```bash
+   npm start
+   ```
+
+You can also run platform-specific commands:
 
 ```bash
-npm run reset-project
+npm run android
+npm run ios
+npm run web
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Environment Variables
 
-## Learn more
+The app currently expects these Expo public environment variables:
 
-To learn more about developing your project with Expo, look at the following resources:
+```env
+EXPO_PUBLIC_SUPABASE_URL=
+EXPO_PUBLIC_SUPABASE_ANON_KEY=
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Do not commit local `.env` files or any private credentials such as Supabase service role keys.
 
-## Join the community
+## Supabase Notes
 
-Join our community of developers creating universal apps.
+This app expects a Supabase backend that includes:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Auth enabled for email/password sign-in
+- A `food_logs` table
+- An `exercise_logs` table
+- An optional `get_dashboard_history` RPC used by the dashboard screen
+
+If the RPC is missing, the dashboard falls back to querying `food_logs` directly.
+
+## Project Structure
+
+- `app/`: Expo Router screens and navigation
+- `components/`: shared UI building blocks
+- `context/`: auth and theme providers
+- `hooks/`: Supabase-backed app logic
+- `lib/`: shared utilities and client setup
+- `constants/`: theme configuration
+
+## Scripts
+
+- `npm start`: start the Expo dev server
+- `npm run android`: open Android
+- `npm run ios`: open iOS
+- `npm run web`: open web
+- `npm run lint`: run lint checks
+
+## Security
+
+- Secrets are loaded from local environment files
+- The public repo includes only a safe `.env.example`
+- Internal recovery notes and machine-specific references are intentionally excluded

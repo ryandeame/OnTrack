@@ -4,7 +4,7 @@ import { useRouter, useSegments } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from 'react-native';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -263,6 +263,12 @@ function RootNavigator() {
   const segments = useSegments();
   const router = useRouter();
   const { resolvedTheme } = useTheme();
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      document.title = 'OnTrack';
+    }
+  }, [segments]);
 
   useEffect(() => {
     if (loading) return;
