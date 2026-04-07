@@ -3,19 +3,29 @@
  * https://docs.expo.dev/guides/color-schemes/
  */
 
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Colors, SYSTEM_DARK_THEME, SYSTEM_LIGHT_THEME, type ThemeColors, type ThemeName } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
+
+type ThemeColorOverrides = Partial<Record<ThemeName | 'light' | 'dark', string>>;
 
 export function useThemeColor(
-  props: { light?: string; dark?: string },
-  colorName: keyof typeof Colors.light & keyof typeof Colors.dark
+  props: ThemeColorOverrides,
+  colorName: keyof ThemeColors
 ) {
-  const theme = useColorScheme() ?? 'light';
-  const colorFromProps = props[theme];
+  const { resolvedTheme } = useTheme();
+  const colorFromTheme = props[resolvedTheme];
 
-  if (colorFromProps) {
-    return colorFromProps;
-  } else {
-    return Colors[theme][colorName];
+  if (colorFromTheme) {
+    return colorFromTheme;
   }
+
+  const fallbackKey = resolvedTheme.endsWith('Inverse') ? 'light' : 'dark';
+  const fallbackColor = props[fallbackKey];
+
+  if (fallbackColor) {
+    return fallbackColor;
+  }
+
+  const systemTheme = fallbackKey === 'light' ? SYSTEM_LIGHT_THEME : SYSTEM_DARK_THEME;
+  return Colors[systemTheme][colorName];
 }
