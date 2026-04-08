@@ -44,10 +44,12 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 16,
-    lineHeight: 42,
+    lineHeight: 44,
   },
   historyHeader: {
     marginTop: 20,
     marginBottom: 10,
+    minHeight: 28,
+    justifyContent: 'center',
   },
 });

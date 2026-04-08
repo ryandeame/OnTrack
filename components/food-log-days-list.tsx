@@ -18,7 +18,7 @@ import type { FoodLog } from '@/types/food';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, Keyboard, LayoutAnimation, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, UIManager, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, Keyboard, LayoutAnimation, Modal, Platform, Pressable, ScrollView, StyleSheet, TextInput, View, useWindowDimensions } from 'react-native';
 
 /**
  * Represents a single day's worth of food log entries, grouped together
@@ -136,12 +136,6 @@ export function FoodLogDaysList({ refreshTrigger }: FoodLogDaysListProps) {
 
     // Listen for keyboard show/hide events
     useEffect(() => {
-        if (Platform.OS === 'android') {
-            if (UIManager.setLayoutAnimationEnabledExperimental) {
-                UIManager.setLayoutAnimationEnabledExperimental(true);
-            }
-        }
-
         const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
         const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
@@ -590,7 +584,14 @@ export function FoodLogDaysList({ refreshTrigger }: FoodLogDaysListProps) {
                                         {`${(foodEntry.grams * foodEntry.carbs_per_gram).toFixed(1)} g carbs · ${(foodEntry.grams * (foodEntry as any).protein_per_gram).toFixed(1)} g protein`}
                                     </ThemedText>
                                     <ThemedText style={[styles.foodEntryTime, { color: themeColors.textMuted }]}>
-                                        {new Date(foodEntry.eaten_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                                        {new Date(foodEntry.eaten_at)
+                                            .toLocaleTimeString('en-US', {
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                second: '2-digit',
+                                                hour12: true,
+                                            })
+                                            .toLowerCase()}
                                     </ThemedText>
                                 </View>
                                 <View style={styles.foodEntryActions}>
@@ -765,7 +766,7 @@ export function FoodLogDaysList({ refreshTrigger }: FoodLogDaysListProps) {
                                             placeholderTextColor={themeColors.inputPlaceholder}
                                         />
                                         <Pressable onPress={slideToCalculator} style={themedCalcButtonStyle}>
-                                            <ThemedText style={{ fontSize: 16 }}>🧮</ThemedText>
+                                            <MaterialIcons name="calculate" size={18} color={themeColors.accent} />
                                         </Pressable>
                                     </View>
                                 </View>

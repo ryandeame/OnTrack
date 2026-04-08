@@ -30,15 +30,16 @@ function getDayRange(date: Date): { startOfDay: string; endOfDay: string } {
 }
 
 /**
- * Format time from ISO string to readable format (e.g., "12:30 PM")
+ * Format time from ISO string to readable format (e.g., "01:30:45 pm")
  */
 export function formatTime(isoString: string): string {
     const date = new Date(isoString);
     return date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
+        hour: '2-digit',
         minute: '2-digit',
+        second: '2-digit',
         hour12: true,
-    });
+    }).toLowerCase();
 }
 
 /**

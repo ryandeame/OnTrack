@@ -4,7 +4,7 @@ import { Colors } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
 import { useExerciseLogs } from '@/hooks/use-exercise-logs';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Keyboard, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 type ExerciseEntryFormProps = {
     onSubmitSuccess?: () => void;
@@ -96,7 +96,6 @@ export function ExerciseEntryForm({ onSubmitSuccess }: ExerciseEntryFormProps) {
         suppressSuggestionsRef.current = true;
         setName(selectedName);
         setShowSuggestions(false);
-        Keyboard.dismiss();
 
         try {
             const latest = await getLatestByName(selectedName);
@@ -123,10 +122,6 @@ export function ExerciseEntryForm({ onSubmitSuccess }: ExerciseEntryFormProps) {
         }
 
         setPrefillOpen(false);
-        Keyboard.dismiss();
-        setTimeout(() => {
-            Keyboard.dismiss();
-        }, 0);
     }, [prefillReps, prefillSets]);
 
     const handleSubmit = useCallback(async () => {

@@ -3,11 +3,19 @@ import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider, type Theme 
 import { useRouter, useSegments } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
+import {
+  SpaceGrotesk_400Regular,
+  SpaceGrotesk_500Medium,
+  SpaceGrotesk_600SemiBold,
+  SpaceGrotesk_700Bold,
+} from '@expo-google-fonts/space-grotesk';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, View, useColorScheme as useNativeColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import CircleButton from '@/components/ui/circle-button';
@@ -95,6 +103,7 @@ function InlineAppearanceToggle({
 function DrawerShell() {
   const router = useRouter();
   const segments = useSegments();
+  const insets = useSafeAreaInsets();
   const systemColorScheme = useNativeColorScheme();
   const { user, signOut } = useAuth();
   const { resolvedTheme, resolvedAppearance, appearanceMode, setAppearanceMode, theme, setTheme } = useTheme();
@@ -142,13 +151,31 @@ function DrawerShell() {
               />
             </View>
           ),
+          headerRight: () => (
+            <View style={styles.userHeaderWrap}>
+              <View
+                style={[
+                  styles.userHeaderIcon,
+                  {
+                    backgroundColor: colors.menuBackground,
+                    borderColor: colors.navBorder,
+                  },
+                ]}>
+                <MaterialIcons
+                  name="person"
+                  size={22}
+                  color={user ? colors.accent : colors.textSecondary}
+                />
+              </View>
+            </View>
+          ),
         })}
         drawerContent={({ navigation }) => (
           <DrawerContentScrollView
             contentContainerStyle={[styles.drawerContainer, { backgroundColor: colors.menuBackground }]}
             style={{ backgroundColor: colors.menuBackground }}
             showsVerticalScrollIndicator={false}>
-            <View style={styles.drawerHeader}>
+            <View style={[styles.drawerHeader, { paddingTop: insets.top + 8 }]}>
               <CircleButton
                 onPress={() => navigation.closeDrawer()}
                 icon="close"
@@ -160,25 +187,6 @@ function DrawerShell() {
                 <ThemedText type="title" style={styles.drawerTitle}>OnTrack</ThemedText>
               </View>
             </View>
-
-            {user && (
-              <View
-                style={[
-                  styles.userCard,
-                  {
-                    backgroundColor: colors.navBackground,
-                    borderColor: colors.navBorder,
-                    shadowColor: colors.accent,
-                  },
-                ]}>
-                <View style={[styles.userAvatar, { backgroundColor: colors.accentMuted }]}> 
-                  <MaterialIcons name="person" size={22} color={colors.accent} />
-                </View>
-                <View style={styles.userTextWrap}>
-                  <ThemedText type="defaultSemiBold" numberOfLines={1}>{user.email ?? 'Signed in'}</ThemedText>
-                </View>
-              </View>
-            )}
 
             <View style={styles.drawerSection}>
               {navItems.map((item) => {
@@ -368,18 +376,34 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    'SpaceGrotesk-Regular': SpaceGrotesk_400Regular,
+    'SpaceGrotesk-Medium': SpaceGrotesk_500Medium,
+    'SpaceGrotesk-SemiBold': SpaceGrotesk_600SemiBold,
+    'SpaceGrotesk-Bold': SpaceGrotesk_700Bold,
+  });
+
+  if (!fontsLoaded && !fontError) {
+    return <View style={styles.loadingContainer} />;
+  }
+
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <ThemeProvider>
-          <RootNavigator />
-        </ThemeProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <RootNavigator />
+          </ThemeProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
@@ -388,12 +412,29 @@ const styles = StyleSheet.create({
   menuButtonWrap: {
     paddingLeft: 12,
   },
+  userHeaderWrap: {
+    paddingRight: 12,
+  },
+  userHeaderIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 6, shadowOffset: { width: 0, height: 3 } },
+      android: { elevation: 3 },
+      default: {},
+    }),
+  },
   drawerContainer: {
-    paddingTop: 8,
+    paddingTop: 0,
     paddingBottom: 12,
   },
   drawerHeader: {
     paddingHorizontal: 14,
+    paddingTop: 8,
     paddingBottom: 14,
     flexDirection: 'row',
     alignItems: 'center',
@@ -405,30 +446,6 @@ const styles = StyleSheet.create({
   drawerTitle: {
     fontSize: 26,
     lineHeight: 28,
-  },
-  userCard: {
-    marginHorizontal: 16,
-    marginBottom: 14,
-    padding: 14,
-    borderRadius: 22,
-    borderWidth: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    shadowOpacity: 0.16,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
-  },
-  userAvatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userTextWrap: {
-    flex: 1,
   },
   drawerSection: {
     paddingHorizontal: 12,

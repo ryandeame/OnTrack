@@ -138,20 +138,24 @@ export default function ROIScreen() {
 
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
-                    <View>
-                        <ThemedText style={styles.pageTitle}>Daily Summary</ThemedText>
-                        <ThemedText style={styles.dateText}>{formatDateHeadline(selectedDate)}</ThemedText>
+                    <View style={styles.headerRow}>
+                        <View style={styles.headerTextWrap}>
+                            <View style={styles.pageTitleWrap}>
+                                <ThemedText style={styles.pageTitle}>Daily Summary</ThemedText>
+                            </View>
+                            <ThemedText style={styles.dateText}>{formatDateHeadline(selectedDate)}</ThemedText>
+                        </View>
+                        <Pressable style={styles.calendarButton} onPress={() => setCalendarVisible((current) => !current)}>
+                            <MaterialIcons
+                                name={calendarVisible ? 'keyboard-arrow-down' : 'calendar-month'}
+                                size={16}
+                                color={palette.primary}
+                            />
+                            <ThemedText style={styles.calendarButtonText}>
+                                {calendarVisible ? 'Hide Calendar' : 'Select Date'}
+                            </ThemedText>
+                        </Pressable>
                     </View>
-                    <Pressable style={styles.calendarButton} onPress={() => setCalendarVisible((current) => !current)}>
-                        <MaterialIcons
-                            name={calendarVisible ? 'keyboard-arrow-up' : 'calendar-month'}
-                            size={16}
-                            color={palette.primary}
-                        />
-                        <ThemedText style={styles.calendarButtonText}>
-                            {calendarVisible ? 'Hide Calendar' : 'View Calendar'}
-                        </ThemedText>
-                    </Pressable>
                 </View>
 
                 <Collapsible expanded={calendarVisible} duration={350}>
@@ -168,21 +172,25 @@ export default function ROIScreen() {
                             <ActivityIndicator size="small" color={palette.primary} style={styles.metricLoader} />
                         ) : (
                             <>
-                                <ThemedText style={styles.primaryMetric}>${summary.totalSpend.toFixed(2)}</ThemedText>
+                                <View style={styles.primaryMetricWrap}>
+                                    <ThemedText style={styles.primaryMetric}>${summary.totalSpend.toFixed(2)}</ThemedText>
+                                </View>
                                 <ThemedText style={styles.goalLabel}>${SPEND_GOAL.toFixed(2)} goal</ThemedText>
                             </>
                         )}
                         {yesterdaySpend > 0 && spendPercentChange !== 0 && (
                             <View style={styles.changeBadge}>
-                                <MaterialIcons
-                                    name={spendPercentChange >= 0 ? 'trending-up' : 'trending-down'}
-                                    size={12}
-                                    color={palette.primary}
-                                />
-                                <ThemedText style={styles.changeBadgeText}>
-                                    {spendPercentChange >= 0 ? '+' : ''}
-                                    {spendPercentChange}% vs yesterday
-                                </ThemedText>
+                                <View style={styles.changeBadgeContent}>
+                                    <MaterialIcons
+                                        name={spendPercentChange >= 0 ? 'trending-up' : 'trending-down'}
+                                        size={12}
+                                        color={palette.primary}
+                                    />
+                                    <ThemedText style={styles.changeBadgeText}>
+                                        {spendPercentChange >= 0 ? '+' : ''}
+                                        {spendPercentChange}% vs yesterday
+                                    </ThemedText>
+                                </View>
                             </View>
                         )}
                     </View>
@@ -284,17 +292,32 @@ const createStyles = (palette: DailySummaryPalette) => StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: 14,
         paddingBottom: 18,
+    },
+    headerRow: {
+        minHeight: 72,
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-end',
+        alignItems: 'stretch',
         gap: 12,
     },
+    headerTextWrap: {
+        flex: 1,
+        minWidth: 0,
+        paddingRight: 8,
+        justifyContent: 'center',
+    },
+    pageTitleWrap: {
+        minHeight: 40,
+        justifyContent: 'center',
+    },
     pageTitle: {
-        fontSize: 30,
+        fontSize: 28,
+        lineHeight: 36,
         fontWeight: '800',
         color: palette.text,
         letterSpacing: -0.8,
         fontFamily: Fonts.rounded,
+        flexShrink: 1,
     },
     dateText: {
         marginTop: 4,
@@ -302,13 +325,18 @@ const createStyles = (palette: DailySummaryPalette) => StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         fontFamily: Fonts.rounded,
+        flexShrink: 1,
     },
     calendarButton: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: 6,
+        flexShrink: 1,
+        width: 128,
+        height: '100%',
         paddingHorizontal: 14,
-        paddingVertical: 10,
+        paddingVertical: 0,
         borderRadius: 999,
         backgroundColor: withOpacity(palette.primary, 0.1),
         borderWidth: 1,
@@ -317,10 +345,14 @@ const createStyles = (palette: DailySummaryPalette) => StyleSheet.create({
     calendarButtonText: {
         color: palette.primary,
         fontSize: 12,
+        lineHeight: 16,
         fontWeight: '700',
         textTransform: 'uppercase',
         letterSpacing: 0.5,
         fontFamily: Fonts.rounded,
+        flexShrink: 1,
+        textAlign: 'center',
+        includeFontPadding: false,
     },
     calendarWrap: {
         paddingHorizontal: 24,
@@ -365,12 +397,17 @@ const createStyles = (palette: DailySummaryPalette) => StyleSheet.create({
         marginTop: 20,
     },
     primaryMetric: {
-        marginTop: 14,
         color: palette.text,
         fontSize: 34,
+        lineHeight: 42,
         fontWeight: '800',
         letterSpacing: -1,
         fontFamily: Fonts.rounded,
+    },
+    primaryMetricWrap: {
+        minHeight: 46,
+        justifyContent: 'center',
+        marginTop: 14,
     },
     goalLabel: {
         marginTop: 6,
@@ -380,22 +417,29 @@ const createStyles = (palette: DailySummaryPalette) => StyleSheet.create({
         fontFamily: Fonts.rounded,
     },
     changeBadge: {
-        marginTop: 'auto',
+        marginTop: 10,
         alignSelf: 'flex-start',
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 999,
         backgroundColor: withOpacity(palette.primary, 0.14),
     },
+    changeBadgeContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        gap: 4,
+    },
     changeBadgeText: {
+        width: 72,
         color: palette.primary,
         fontSize: 10,
+        lineHeight: 12,
         fontWeight: '800',
         textTransform: 'uppercase',
         letterSpacing: 0.4,
+        textAlign: 'left',
+        includeFontPadding: false,
         fontFamily: Fonts.rounded,
     },
     ringWrap: {

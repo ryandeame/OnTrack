@@ -6,8 +6,9 @@ import { Colors } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
 import { FoodLogFormData, useFoodLogSubmit } from '@/hooks/use-food-log-submit';
 import { useFoodLogs } from '@/hooks/use-food-logs';
+import { MaterialIcons } from '@expo/vector-icons';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Keyboard, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 type FoodLogEntryFormProps = {
     /** Called after a successful submission */
@@ -137,7 +138,6 @@ export function FoodLogEntryForm({ onSubmitSuccess }: FoodLogEntryFormProps) {
         setName(selectedName);
         suppressSuggestionsRef.current = true;
         setShowSuggestions(false);
-        Keyboard.dismiss();
         setServingsPromptOpen(true);
         setServingsInput('1');
         setGramsPerServInput('');
@@ -170,10 +170,6 @@ export function FoodLogEntryForm({ onSubmitSuccess }: FoodLogEntryFormProps) {
             }
         } finally {
             setServingsPromptOpen(false);
-            Keyboard.dismiss();
-            setTimeout(() => {
-                Keyboard.dismiss();
-            }, 0);
         }
     }, [servingsInput, gramsPerServInput, name, getLatestByName]);
 
@@ -239,7 +235,7 @@ export function FoodLogEntryForm({ onSubmitSuccess }: FoodLogEntryFormProps) {
                     onPress={() => setCostCalcOpen(true)}
                     style={[styles.calcBtn, { backgroundColor: themeColors.inputBackground, borderColor: themeColors.inputPlaceholder }]}
                 >
-                    <ThemedText style={{ fontSize: 16 }}>🧮</ThemedText>
+                    <MaterialIcons name="calculate" size={18} color={themeColors.accent} />
                 </Pressable>
             </View>
 

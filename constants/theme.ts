@@ -185,7 +185,7 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     textSecondary: '#EBC9AF',
     textMuted: '#C89B7B',
     accent: '#F97316',
-    accentSecondary: '#FF453A',
+    accentSecondary: '#FF0000',
     accentMuted: 'rgba(249, 115, 22, 0.18)',
     warning: '#FACC15',
     danger: '#EF4444',
@@ -249,7 +249,7 @@ export const Colors: Record<ThemeName, ThemeColors> = {
     textSecondary: '#7E563F',
     textMuted: '#9B7259',
     accent: '#EA580C',
-    accentSecondary: '#FF3B30',
+    accentSecondary: '#FF0000',
     accentMuted: 'rgba(234, 88, 12, 0.12)',
     warning: '#CA8A04',
     danger: '#DC2626',
@@ -287,15 +287,15 @@ export function resolveThemeName(baseTheme: BaseThemeName, appearance: ThemeAppe
 
 export const Fonts = Platform.select({
   ios: {
-    sans: 'System',
+    sans: 'SpaceGrotesk-Regular',
     serif: 'Times New Roman',
-    rounded: 'System',
+    rounded: 'SpaceGrotesk-Regular',
     mono: 'Menlo',
   },
   default: {
-    sans: 'normal',
+    sans: 'SpaceGrotesk-Regular',
     serif: 'serif',
-    rounded: 'normal',
+    rounded: 'SpaceGrotesk-Regular',
     mono: 'monospace',
   },
   web: {
