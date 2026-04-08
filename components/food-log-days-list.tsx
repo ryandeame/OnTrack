@@ -540,9 +540,6 @@ export function FoodLogDaysList({ refreshTrigger }: FoodLogDaysListProps) {
                         style={[styles.dayHeader, { borderColor: themeColors.navBorder }]}
                     >
                         <View style={styles.dayHeaderLeft}>
-                            <View style={[styles.dayDateIconWrap, { backgroundColor: themeColors.accentMuted }]}>
-                                <MaterialIcons name="calendar-today" size={14} color={themeColors.accent} />
-                            </View>
                             <View>
                                 <ThemedText style={[styles.dayHeaderText, { color: themeColors.text }]}>{formatDayHeaderDate(dayGroup.date)}</ThemedText>
                                 <ThemedText style={[styles.dayHeaderMeta, { color: themeColors.textSecondary }]}>{entryCountLabel}</ThemedText>

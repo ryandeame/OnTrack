@@ -104,11 +104,7 @@ export default function FoodScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.cardStrip}
             />
-            <ThemedText style={styles.eyebrow}>Add Entry</ThemedText>
-            <ThemedText style={styles.sectionTitle}>Log a meal</ThemedText>
-            <ThemedText style={styles.sectionText}>
-              Capture servings, macros, cost, and timing in one sleek entry flow.
-            </ThemedText>
+            <ThemedText style={styles.sectionTitle}>Log a food item</ThemedText>
 
             <View style={styles.formWrap}>
               <FoodLogEntryForm onSubmitSuccess={handleFormSubmitSuccess} />
@@ -127,13 +123,7 @@ export default function FoodScreen() {
                 <ThemedText style={styles.eyebrow}>History</ThemedText>
                 <ThemedText style={styles.sectionTitle}>Recent days</ThemedText>
               </View>
-              <View style={[styles.historyBadge, { backgroundColor: palette.softNeutral }]}>
-                <ThemedText style={styles.historyBadgeText}>Daily groups</ThemedText>
-              </View>
             </View>
-            <ThemedText style={styles.sectionText}>
-              Expand each day to review meals, calories, and protein totals in the same Aurora-styled flow.
-            </ThemedText>
 
             <View style={styles.historyListWrap}>
               <FoodLogDaysList refreshTrigger={refreshKey} />
