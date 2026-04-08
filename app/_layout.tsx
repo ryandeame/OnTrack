@@ -9,6 +9,7 @@ import {
   SpaceGrotesk_600SemiBold,
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
+import * as SystemUI from 'expo-system-ui';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -114,6 +115,9 @@ function DrawerShell() {
   const isLightSurface = isInverseTheme(resolvedTheme);
   const isSystemAppearance = appearanceMode === 'system';
   const systemIconName = systemColorScheme === 'dark' ? 'dark-mode' : 'light-mode';
+  const drawerViewportInset = Platform.OS === 'android'
+    ? Math.max(insets.bottom, 28)
+    : Math.max(insets.bottom, 12);
 
   const handleSignOut = async () => {
     await signOut();
@@ -171,9 +175,22 @@ function DrawerShell() {
           ),
         })}
         drawerContent={({ navigation }) => (
+          <View
+            style={[
+              styles.drawerViewport,
+              {
+                backgroundColor: colors.menuBackground,
+                paddingBottom: drawerViewportInset,
+              },
+            ]}>
           <DrawerContentScrollView
-            contentContainerStyle={[styles.drawerContainer, { backgroundColor: colors.menuBackground }]}
-            style={{ backgroundColor: colors.menuBackground }}
+            contentContainerStyle={[
+              styles.drawerContainer,
+              {
+                backgroundColor: colors.menuBackground,
+              },
+            ]}
+            style={styles.drawerScroll}
             showsVerticalScrollIndicator={false}>
             <View style={[styles.drawerHeader, { paddingTop: insets.top + 8 }]}>
               <CircleButton
@@ -313,13 +330,20 @@ function DrawerShell() {
               )}
             </View>
 
-            <View style={[styles.signOutSection, { borderTopColor: colors.navBorder }]}> 
+            <View
+              style={[
+                styles.signOutSection,
+                {
+                  borderTopColor: colors.navBorder,
+                },
+              ]}>
               <Pressable style={styles.signOutButton} onPress={handleSignOut}>
                 <MaterialIcons name="logout" size={20} color={colors.danger} />
                 <ThemedText style={[styles.signOutText, { color: colors.danger }]}>Sign Out</ThemedText>
               </Pressable>
             </View>
           </DrawerContentScrollView>
+          </View>
         )}>
         <Drawer.Screen name="roi" options={{ drawerLabel: 'Daily Summary', title: 'Daily Summary' }} />
         <Drawer.Screen name="(tabs)" options={{ drawerLabel: 'Food', title: 'Food' }} />
@@ -353,6 +377,14 @@ function RootNavigator() {
   }, [segments]);
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      return;
+    }
+
+    void SystemUI.setBackgroundColorAsync(Colors[resolvedTheme].background).catch(() => {});
+  }, [resolvedTheme]);
+
+  useEffect(() => {
     if (loading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
@@ -372,7 +404,11 @@ function RootNavigator() {
     );
   }
 
-  return <DrawerShell />;
+  return (
+    <View style={[styles.navigatorRoot, { backgroundColor: Colors[resolvedTheme].background }]}>
+      <DrawerShell />
+    </View>
+  );
 }
 
 export default function RootLayout() {
@@ -409,6 +445,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  navigatorRoot: {
+    flex: 1,
+  },
   menuButtonWrap: {
     paddingLeft: 12,
   },
@@ -428,9 +467,17 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
+  drawerViewport: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  drawerScroll: {
+    flex: 1,
+  },
   drawerContainer: {
     paddingTop: 0,
     paddingBottom: 12,
+    flexGrow: 1,
   },
   drawerHeader: {
     paddingHorizontal: 14,
