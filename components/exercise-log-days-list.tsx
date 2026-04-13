@@ -11,7 +11,6 @@ import { Alert, Platform, Pressable, StyleSheet, View } from 'react-native';
 type ExerciseLogDayGroup = {
     key: string;
     date: Date;
-    totalSets: number;
     totalReps: number;
     entries: ExerciseLog[];
 };
@@ -45,13 +44,11 @@ export function ExerciseLogDaysList({ refreshTrigger }: ExerciseLogDaysListProps
                 const existing = byDay.get(dayKey) ?? {
                     key: dayKey,
                     date: new Date(occurredAt.getFullYear(), occurredAt.getMonth(), occurredAt.getDate()),
-                    totalSets: 0,
                     totalReps: 0,
                     entries: [],
                 };
 
                 existing.entries.push(exerciseLog);
-                existing.totalSets += exerciseLog.sets;
                 existing.totalReps += exerciseLog.sets * exerciseLog.reps;
                 byDay.set(dayKey, existing);
             }
@@ -159,8 +156,7 @@ export function ExerciseLogDaysList({ refreshTrigger }: ExerciseLogDaysListProps
 
                         <View style={styles.dayHeaderRight}>
                             <View>
-                                <ThemedText style={[styles.dayHeaderSummary, { color: themeColors.text }]}>{`${dayGroup.totalSets} sets`}</ThemedText>
-                                <ThemedText style={[styles.dayHeaderSummaryMuted, { color: themeColors.textSecondary }]}>{`${dayGroup.totalReps} total reps`}</ThemedText>
+                                <ThemedText style={[styles.dayHeaderSummary, { color: themeColors.text }]}>{`${dayGroup.totalReps} reps`}</ThemedText>
                             </View>
                             <View style={[styles.dayStatusCircle, { backgroundColor: statusColor }]}>
                                 <MaterialIcons

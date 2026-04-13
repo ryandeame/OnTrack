@@ -25,7 +25,7 @@ import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 
 export const unstable_settings = {
-  initialRouteName: 'roi',
+  initialRouteName: 'daily-summary',
 };
 
 function withAlpha(hex: string, alpha: number) {
@@ -88,7 +88,6 @@ function InlineAppearanceToggle({
       onPress={onToggle}>
       <View style={styles.inlineAppearanceTrack} />
       <Animated.View
-        pointerEvents="none"
         style={[
           styles.inlineAppearanceThumb,
           {
@@ -124,11 +123,11 @@ function DrawerShell() {
     router.replace('/(auth)/sign-in');
   };
 
-  const activeSegments = segments.length ? segments : ['roi'];
+  const activeSegments = segments.length ? segments : ['daily-summary'];
 
   const navItems = [
-    { label: 'Daily Summary', icon: 'insights', href: '/roi', matches: ['roi'] },
-    { label: 'Food', icon: 'restaurant', href: '/', matches: ['(tabs)', 'index', 'dashboard'] },
+    { label: 'Daily Summary', icon: 'insights', href: '/daily-summary', matches: ['daily-summary'] },
+    { label: 'Food', icon: 'restaurant', href: '/food', matches: ['(tabs)', 'food', 'food-dashboard'] },
     { label: 'Exercise', icon: 'fitness-center', href: '/exercise', matches: ['exercise'] },
   ] as const;
 
@@ -345,7 +344,7 @@ function DrawerShell() {
           </DrawerContentScrollView>
           </View>
         )}>
-        <Drawer.Screen name="roi" options={{ drawerLabel: 'Daily Summary', title: 'Daily Summary' }} />
+        <Drawer.Screen name="daily-summary" options={{ drawerLabel: 'Daily Summary', title: 'Daily Summary' }} />
         <Drawer.Screen name="(tabs)" options={{ drawerLabel: 'Food', title: 'Food' }} />
         <Drawer.Screen name="exercise" options={{ drawerLabel: 'Exercise', title: 'Exercise' }} />
         <Drawer.Screen name="(auth)" options={{ drawerItemStyle: { display: 'none' }, headerShown: false }} />
@@ -392,7 +391,7 @@ function RootNavigator() {
     if (!user && !inAuthGroup) {
       router.replace('/(auth)/sign-in');
     } else if (user && inAuthGroup) {
-      router.replace('/roi');
+      router.replace('/daily-summary');
     }
   }, [loading, router, segments, user]);
 

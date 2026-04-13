@@ -1,15 +1,15 @@
+import DashboardHistoryChart from '@/components/dashboard-history-chart';
 import { useFocusEffect } from '@react-navigation/native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { supabase } from '@/lib/supabase';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 type DayRow = {
   d: string;
-  totalCal: number;
-  totalProt: number;
+  totalReps: number;
 };
 
 function formatDayKey(date: Date) {
@@ -28,34 +28,33 @@ function buildLastTenDays(rows: DayRow[]) {
     date.setHours(0, 0, 0, 0);
     date.setDate(date.getDate() - offset);
     const key = formatDayKey(date);
-    days.push(map.get(key) ?? { d: key, totalCal: 0, totalProt: 0 });
+    days.push(map.get(key) ?? { d: key, totalReps: 0 });
   }
 
   return days;
 }
 
-export default function DashboardScreen() {
-  const [mode, setMode] = useState<'cal' | 'prot'>('cal');
+export default function ExerciseDashboardScreen() {
   const [rows, setRows] = useState<DayRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [chartContainerWidth, setChartContainerWidth] = useState(0);
+  const { width } = useWindowDimensions();
 
-  const activeBg = useThemeColor({}, 'dashboardToggleActiveBg');
-  const activeText = useThemeColor({}, 'dashboardToggleActiveText');
-  const inactiveBg = useThemeColor({}, 'dashboardToggleInactiveBg');
-  const inactiveText = useThemeColor({}, 'dashboardToggleInactiveText');
   const cardBackground = useThemeColor({}, 'menuBackground');
   const muted = useThemeColor({}, 'tabIconDefault');
   const accent = useThemeColor({}, 'tint');
   const border = useThemeColor({}, 'inputPlaceholder');
+  const chartLineColor = useThemeColor({}, 'chartLine');
+  const chartAxisColor = useThemeColor({}, 'chartAxis');
 
-  const fetchDashboardHistory = useCallback(async () => {
+  const fetchExerciseDashboardHistory = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-      const { data: rpcRows, error: rpcError } = await supabase.rpc('get_dashboard_history', {
+      const { data: rpcRows, error: rpcError } = await supabase.rpc('get_exercise_dashboard_history', {
         timezone,
         days_count: 10,
       });
@@ -64,8 +63,7 @@ export default function DashboardScreen() {
 
       const mapped = ((rpcRows as any[]) ?? []).map((row) => ({
         d: row.day_date,
-        totalCal: Number(row.total_calories) || 0,
-        totalProt: Number(row.total_protein) || 0,
+        totalReps: Number(row.total_reps) || 0,
       }));
 
       setRows(buildLastTenDays(mapped));
@@ -76,29 +74,26 @@ export default function DashboardScreen() {
         startDate.setDate(startDate.getDate() - 9);
 
         const { data, error: queryError } = await supabase
-          .from('food_logs')
-          .select('eaten_at, grams, calories_per_gram, protein_per_gram')
-          .eq('is_valid', true)
-          .gte('eaten_at', startDate.toISOString())
-          .order('eaten_at', { ascending: true });
+          .from('exercise_logs')
+          .select('occurred_at, sets, reps')
+          .gte('occurred_at', startDate.toISOString())
+          .order('occurred_at', { ascending: true });
 
         if (queryError) throw queryError;
 
         const byDay = new Map<string, DayRow>();
         for (const row of data ?? []) {
-          const date = new Date(row.eaten_at);
+          const date = new Date(row.occurred_at);
           const key = formatDayKey(date);
-          const current = byDay.get(key) ?? { d: key, totalCal: 0, totalProt: 0 };
-          const grams = Number(row.grams) || 0;
-          current.totalCal += grams * (Number(row.calories_per_gram) || 0);
-          current.totalProt += grams * (Number(row.protein_per_gram) || 0);
+          const current = byDay.get(key) ?? { d: key, totalReps: 0 };
+          current.totalReps += (Number(row.sets) || 0) * (Number(row.reps) || 0);
           byDay.set(key, current);
         }
 
         setRows(buildLastTenDays(Array.from(byDay.values())));
       } catch (fallbackError: any) {
         setRows(buildLastTenDays([]));
-        setError(fallbackError?.message || rpcFailure?.message || 'Unable to load dashboard history.');
+        setError(fallbackError?.message || rpcFailure?.message || 'Unable to load exercise dashboard history.');
       }
     } finally {
       setLoading(false);
@@ -107,74 +102,93 @@ export default function DashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchDashboardHistory();
-    }, [fetchDashboardHistory])
-  );
-
-  const displayRows = useMemo(
-    () => rows.map((row) => ({
-      ...row,
-      value: mode === 'cal' ? row.totalCal : row.totalProt,
-    })),
-    [mode, rows]
+      fetchExerciseDashboardHistory();
+    }, [fetchExerciseDashboardHistory])
   );
 
   const averageValue = useMemo(() => {
-    if (displayRows.length === 0) return 0;
-    const total = displayRows.reduce((sum, row) => sum + row.value, 0);
-    return total / displayRows.length;
-  }, [displayRows]);
+    if (rows.length === 0) return 0;
+    const total = rows.reduce((sum, row) => sum + row.totalReps, 0);
+    return total / rows.length;
+  }, [rows]);
 
   const bestDay = useMemo(() => {
-    if (displayRows.length === 0) return null;
-    return displayRows.reduce((best, row) => (row.value > best.value ? row : best), displayRows[0]);
-  }, [displayRows]);
+    if (rows.length === 0) return null;
+    return rows.reduce((best, row) => (row.totalReps > best.totalReps ? row : best), rows[0]);
+  }, [rows]);
+
+  const chartData = useMemo(
+    () => rows.map((row) => ({
+      day: row.d.slice(5),
+      value: row.totalReps,
+    })),
+    [rows]
+  );
+
+  const chartOuterWidth = useMemo(
+    () => Math.max(220, Math.floor(chartContainerWidth || (width - 32))),
+    [chartContainerWidth, width]
+  );
 
   return (
     <ThemedView style={styles.screen} useImageBackground>
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText type="title" style={styles.title}>Dashboard</ThemedText>
-        <ThemedText style={[styles.subtitle, { color: muted }]}>Food trends from Supabase over the last 10 days.</ThemedText>
+        <ThemedText style={[styles.subtitle, { color: muted }]}>Exercise reps from Supabase over the last 10 days.</ThemedText>
 
-        <View style={[styles.segment, { borderColor: border }]}> 
-          <Pressable onPress={() => setMode('cal')} style={[styles.segmentBtn, { backgroundColor: mode === 'cal' ? activeBg : inactiveBg }]}> 
-            <ThemedText style={{ color: mode === 'cal' ? activeText : inactiveText, fontWeight: '700' }}>Calories</ThemedText>
-          </Pressable>
-          <Pressable onPress={() => setMode('prot')} style={[styles.segmentBtn, { backgroundColor: mode === 'prot' ? activeBg : inactiveBg }]}> 
-            <ThemedText style={{ color: mode === 'prot' ? activeText : inactiveText, fontWeight: '700' }}>Protein</ThemedText>
-          </Pressable>
+        <View
+          style={[styles.panel, { backgroundColor: cardBackground, borderColor: border }]}
+          onLayout={(event) => {
+            const measuredWidth = Math.floor(event.nativeEvent.layout.width - 32);
+            setChartContainerWidth((prev) => (prev === measuredWidth ? prev : measuredWidth));
+          }}>
+          <ThemedText type="subtitle">Last 10 days</ThemedText>
+          <ThemedText style={[styles.panelCaption, { color: muted }]}>Daily total reps</ThemedText>
+
+          {loading ? (
+            <ThemedText style={{ color: muted }}>Loading dashboard data...</ThemedText>
+          ) : chartData.length > 0 ? (
+            <DashboardHistoryChart
+              chartData={chartData}
+              chartWidth={chartOuterWidth}
+              chartLineColor={chartLineColor}
+              chartAxisColor={chartAxisColor}
+            />
+          ) : (
+            <ThemedText style={{ color: muted }}>No data to chart yet.</ThemedText>
+          )}
         </View>
 
         <View style={styles.summaryRow}>
-          <View style={[styles.summaryCard, { backgroundColor: cardBackground, borderColor: border }]}> 
+          <View style={[styles.summaryCard, { backgroundColor: cardBackground, borderColor: border }]}>
             <ThemedText style={[styles.metricLabel, { color: muted }]}>Average</ThemedText>
             <ThemedText type="title" style={styles.metricValue}>{Math.round(averageValue)}</ThemedText>
-            <ThemedText style={{ color: muted }}>{mode === 'cal' ? 'calories per day' : 'grams of protein per day'}</ThemedText>
+            <ThemedText style={{ color: muted }}>total reps per day</ThemedText>
           </View>
-          <View style={[styles.summaryCard, { backgroundColor: cardBackground, borderColor: border }]}> 
+          <View style={[styles.summaryCard, { backgroundColor: cardBackground, borderColor: border }]}>
             <ThemedText style={[styles.metricLabel, { color: muted }]}>Best Day</ThemedText>
-            <ThemedText type="title" style={styles.metricValue}>{Math.round(bestDay?.value ?? 0)}</ThemedText>
+            <ThemedText type="title" style={styles.metricValue}>{Math.round(bestDay?.totalReps ?? 0)}</ThemedText>
             <ThemedText style={{ color: muted }}>{bestDay ? new Date(bestDay.d).toLocaleDateString() : 'No data yet'}</ThemedText>
           </View>
         </View>
 
-        <View style={[styles.panel, { backgroundColor: cardBackground, borderColor: border }]}> 
+        <View style={[styles.panel, { backgroundColor: cardBackground, borderColor: border }]}>
           <ThemedText type="subtitle">Last 10 days</ThemedText>
-          <ThemedText style={[styles.panelCaption, { color: muted }]}>The original chart depended on native chart packages, so this rebuild keeps the same Supabase history data in a lighter list view first.</ThemedText>
+          <ThemedText style={[styles.panelCaption, { color: muted }]}>Day-by-day reps from the same exercise history feed.</ThemedText>
 
           {loading ? (
             <ThemedText style={{ color: muted }}>Loading dashboard data...</ThemedText>
           ) : (
             <View style={styles.rows}>
-              {displayRows.map((row) => (
-                <View key={row.d} style={[styles.dayRow, { borderBottomColor: border }]}> 
+              {rows.map((row) => (
+                <View key={row.d} style={[styles.dayRow, { borderBottomColor: border }]}>
                   <View>
                     <ThemedText type="defaultSemiBold">{new Date(row.d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</ThemedText>
                     <ThemedText style={{ color: muted }}>{row.d}</ThemedText>
                   </View>
                   <View style={styles.dayValueWrap}>
-                    <ThemedText type="defaultSemiBold" style={{ color: accent }}>{Math.round(row.value)}</ThemedText>
-                    <ThemedText style={{ color: muted }}>{mode === 'cal' ? 'calories' : 'protein g'}</ThemedText>
+                    <ThemedText type="defaultSemiBold" style={{ color: accent }}>{Math.round(row.totalReps)}</ThemedText>
+                    <ThemedText style={{ color: muted }}>total reps</ThemedText>
                   </View>
                 </View>
               ))}
@@ -203,17 +217,6 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: -4,
-  },
-  segment: {
-    flexDirection: 'row',
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  segmentBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
   },
   summaryRow: {
     flexDirection: 'row',

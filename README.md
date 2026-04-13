@@ -10,6 +10,7 @@ OnTrack is a React Native fitness and nutrition app built with Expo and Supabase
 - Food log history grouped by day
 - Dashboard view for the last 10 days of calories and protein
 - Exercise logging with name suggestions and quick prefill from previous entries
+- Exercise dashboard view for the last 10 days of total reps
 - Theme switching with multiple recovered visual palettes
 
 ## Tech Stack
@@ -75,8 +76,9 @@ This app expects a Supabase backend that includes:
 - A `food_logs` table
 - An `exercise_logs` table
 - An optional `get_dashboard_history` RPC used by the dashboard screen
+- An optional `get_exercise_dashboard_history` RPC used by the exercise dashboard screen
 
-If the RPC is missing, the dashboard falls back to querying `food_logs` directly.
+If either RPC is missing, the related dashboard falls back to querying its underlying table directly.
 
 ## Project Structure
 

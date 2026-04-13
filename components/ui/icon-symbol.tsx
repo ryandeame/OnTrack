@@ -20,6 +20,7 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
   'fork.knife': 'restaurant',
   'chart.line.uptrend.xyaxis': 'show-chart',
+  'figure.strengthtraining.traditional': 'fitness-center',
 } as IconMapping;
 
 /**
