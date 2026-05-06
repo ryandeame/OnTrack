@@ -9,11 +9,12 @@ import {
   SpaceGrotesk_600SemiBold,
   SpaceGrotesk_700Bold,
 } from '@expo-google-fonts/space-grotesk';
+import { deactivateKeepAwake } from 'expo-keep-awake';
 import * as SystemUI from 'expo-system-ui';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, View, useColorScheme as useNativeColorScheme } from 'react-native';
+import { ActivityIndicator, Animated, AppState, Easing, Platform, Pressable, StyleSheet, View, useColorScheme as useNativeColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -360,6 +361,32 @@ function RootNavigator() {
   const segments = useSegments();
   const router = useRouter();
   const { resolvedTheme } = useTheme();
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    const releaseKeepAwake = () => {
+      void deactivateKeepAwake().catch((error) => {
+        if (__DEV__) {
+          console.warn('Failed to release Android keep-awake lock', error);
+        }
+      });
+    };
+
+    releaseKeepAwake();
+
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        releaseKeepAwake();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {

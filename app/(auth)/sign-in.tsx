@@ -43,7 +43,7 @@ export default function SignInScreen() {
         if (signInError) {
             setError(signInError.message);
         } else {
-            router.replace('/');
+            router.replace('/daily-summary');
         }
     };
 
